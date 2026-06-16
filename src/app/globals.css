@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap');
+
+@theme {
+  --font-sans: 'IBM Plex Sans Arabic', system-ui, -apple-system, sans-serif;
+  
+  /* Color Palette - Custom HSL Tailored Colors */
+  --color-brand-50: hsl(210, 100%, 98%);
+  --color-brand-100: hsl(210, 100%, 95%);
+  --color-brand-500: hsl(215, 85%, 50%);
+  --color-brand-600: hsl(215, 85%, 45%);
+  --color-brand-700: hsl(215, 85%, 38%);
+  
+  --color-dark-800: hsl(220, 30%, 15%);
+  --color-dark-900: hsl(220, 40%, 8%);
+  --color-dark-950: hsl(220, 40%, 5%);
+
+  --color-success: hsl(150, 80%, 38%);
+  --color-success-light: hsl(150, 80%, 95%);
+  --color-warning: hsl(38, 90%, 50%);
+  --color-warning-light: hsl(38, 90%, 95%);
+  --color-danger: hsl(0, 85%, 60%);
+  --color-danger-light: hsl(0, 85%, 96%);
+  
+  /* Modern styling variables */
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+}
+
+/* Base custom styles */
+body {
+  font-family: var(--font-sans);
+  background-color: #f8fafc;
+  color: #0f172a;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Glassmorphism sidebar helper */
+.glass-panel {
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(12px);
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Print CSS Configurations */
+@media print {
+  /* Hide dashboard navigation, header, action buttons, and filters */
+  .no-print,
+  nav,
+  aside,
+  header,
+  button,
+  .btn,
+  .print-actions,
+  input[type="file"],
+  input,
+  select,
+  textarea {
+    display: none !important;
+  }
+
+  body {
+    background-color: white !important;
+    background: white !important;
+    color: black !important;
+    font-size: 12pt !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Reset container widths and remove shadows for paper printing */
+  .print-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: transparent !important;
+  }
+
+  /* Page breaks for batch printing */
+  .bill-page-break {
+    page-break-after: always;
+    break-after: page;
+  }
+
+  /* Remove browser added URL header/footer */
+  @page {
+    size: A4;
+    margin: 1.2cm 1cm 1.2cm 1cm;
+  }
+
+  /* Ensure text colors print correctly */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
