@@ -30,6 +30,9 @@ export async function GET(
       },
       include: {
         bills: {
+          include: {
+            billingCycle: true,
+          },
           orderBy: {
             createdAt: 'desc',
           },
