@@ -48,12 +48,10 @@ const PRICING = {
 function calcClient(previous: number, current: number, workUnits: number) {
   const consumption = Math.max(current - previous, 0);
   const workUnitsTotal = workUnits * PRICING.workUnitPrice;
-  const tier1Units = Math.min(consumption, PRICING.tier1Limit);
-  const tier1Cost = tier1Units * PRICING.tier1Price;
-  const tier2Units = Math.max(consumption - PRICING.tier1Limit, 0);
-  const tier2Cost = tier2Units * PRICING.tier2Price;
-  const totalAmount = workUnitsTotal + tier1Cost + tier2Cost;
-  return { consumption, workUnitsTotal, tier1Units, tier1Cost, tier2Units, tier2Cost, totalAmount };
+  const unitPrice = consumption <= PRICING.tier1Limit ? PRICING.tier1Price : PRICING.tier2Price;
+  const consumptionCost = consumption * unitPrice;
+  const totalAmount = workUnitsTotal + consumptionCost;
+  return { consumption, workUnitsTotal, unitPrice, consumptionCost, totalAmount };
 }
 
 export default function BillingPage() {
@@ -71,8 +69,8 @@ export default function BillingPage() {
     notes: string | null;
     consumption: number;
     workUnitsTotal: number;
-    tier1Cost: number;
-    tier2Cost: number;
+    unitPrice: number;
+    consumptionCost: number;
     totalAmount: number;
   }>>({});
   const [unitTypes, setUnitTypes] = useState<Record<string, UnitType>>({});
@@ -134,8 +132,8 @@ export default function BillingPage() {
             notes: null,
             consumption: 0,
             workUnitsTotal: 0,
-            tier1Cost: 0,
-            tier2Cost: 0,
+            unitPrice: PRICING.tier1Price,
+            consumptionCost: 0,
             totalAmount: 0,
           };
         });
@@ -155,16 +153,17 @@ export default function BillingPage() {
           else if (work > 0) initU[b.id] = 'work';
           else initU[b.id] = 'regular';
 
+          const prevCalc = calcClient(Number(b.previousReading), Number(b.currentReading), work);
           initR[b.id] = {
             currentReading: Number(b.currentReading),
             workUnits: work,
             meterPhotoUrl: b.meterPhotoUrl,
             notes: b.notes,
-            consumption: consumption,
-            workUnitsTotal: Number(b.workUnitsTotal),
-            tier1Cost: Number(b.tier1Cost),
-            tier2Cost: Number(b.tier2Cost),
-            totalAmount: Number(b.totalAmount),
+            consumption: prevCalc.consumption,
+            workUnitsTotal: prevCalc.workUnitsTotal,
+            unitPrice: prevCalc.unitPrice,
+            consumptionCost: prevCalc.consumptionCost,
+            totalAmount: prevCalc.totalAmount,
           };
         });
         setReadings(initR);
@@ -200,8 +199,8 @@ export default function BillingPage() {
         workUnits: work,
         consumption: calc.consumption,
         workUnitsTotal: calc.workUnitsTotal,
-        tier1Cost: calc.tier1Cost,
-        tier2Cost: calc.tier2Cost,
+        unitPrice: calc.unitPrice,
+        consumptionCost: calc.consumptionCost,
         totalAmount: calc.totalAmount,
       }
     }));
@@ -426,8 +425,7 @@ export default function BillingPage() {
                       <th className="p-3">وحدات العمل</th>
                       <th className="p-3">الاستهلاك</th>
                       <th className="p-3">رسوم الوحدات</th>
-                      <th className="p-3">الشريحة الأولى</th>
-                      <th className="p-3">الشريحة الثانية</th>
+                      <th className="p-3">قيمة الاستهلاك</th>
                       <th className="p-3">المبلغ الإجمالي</th>
                       <th className="p-3">صورة العداد</th>
                       <th className="p-3">ملاحظات</th>
@@ -508,17 +506,10 @@ export default function BillingPage() {
                             {(ut === 'work' || ut === 'both') ? ((r?.workUnitsTotal ?? 0).toLocaleString() + ' ريال') : '—'}
                           </td>
 
-                          {/* Tier 1 */}
+                          {/* Consumption Cost (flat pricing) */}
                           <td className="p-3 text-slate-600">
                             {(ut === 'regular' || ut === 'both') && calc ? (
-                              <>{calc.tier1Units.toFixed(2)} × {PRICING.tier1Price} = {calc.tier1Cost.toLocaleString()} ريال</>
-                            ) : '—'}
-                          </td>
-
-                          {/* Tier 2 */}
-                          <td className="p-3 text-slate-600">
-                            {(ut === 'regular' || ut === 'both') && calc ? (
-                              <>{calc.tier2Units.toFixed(2)} × {PRICING.tier2Price} = {calc.tier2Cost.toLocaleString()} ريال</>
+                              <>{calc.consumption.toFixed(2)} × {calc.unitPrice} = {calc.consumptionCost.toLocaleString()} ريال</>
                             ) : '—'}
                           </td>
 

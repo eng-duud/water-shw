@@ -120,6 +120,7 @@ export default function BatchBillsPrint() {
         const consumption = Number(bill.consumption);
         const workUnits = bill.workUnits;
         const consumptionCost = Number(bill.tier1Cost) + Number(bill.tier2Cost);
+        const unitPrice = consumption > 4 ? 1000 : 700;
         const monthTotal = Number(bill.totalAmount);
         const previousBillAmount = Number(bill.previousBillAmount || 0);
         const previousBillPaid = Number(bill.previousBillPaid || 0);
@@ -174,7 +175,7 @@ export default function BatchBillsPrint() {
                   <tr className="border-b border-black">
                     <th className="border-l border-black p-1" colSpan={2}>قراءة العداد</th>
                     <th className="border-l border-black p-1" rowSpan={2}>وحدات فعلية</th>
-                    <th className="border-l border-black p-1" rowSpan={2}>وحدات تقديرية</th>
+                    <th className="border-l border-black p-1" rowSpan={2}>السعر</th>
                     <th className="border-l border-black p-1" rowSpan={2}>وحدات العمل</th>
                     <th className="border-l border-black p-1" rowSpan={2}>قيمة الإستهلاك</th>
                     <th className="border-l border-black p-1" rowSpan={2}>رسوم الخدمات</th>
@@ -196,7 +197,7 @@ export default function BatchBillsPrint() {
                     <td className="border-l border-black p-1.5 font-mono">{currentReading.toFixed(2)}</td>
                     <td className="border-l border-black p-1.5 font-mono">{previousReading.toFixed(2)}</td>
                     <td className="border-l border-black p-1.5 font-mono">{consumption.toFixed(2)}</td>
-                    <td className="border-l border-black p-1.5 font-mono">0.00</td>
+                    <td className="border-l border-black p-1.5 font-mono">{unitPrice}</td>
                     <td className="border-l border-black p-1.5 font-mono">{workUnits}</td>
                     <td className="border-l border-black p-1.5 font-mono">{consumptionCost.toLocaleString()}</td>
                     <td className="border-l border-black p-1.5 font-mono">0</td>
@@ -228,7 +229,7 @@ export default function BatchBillsPrint() {
             {/* Price Footer */}
             <div className="flex justify-between items-center text-[9px] text-gray-500 pt-2 border-t border-black">
               <span>تاريخ الطباعة: {new Date().toLocaleDateString('ar-YE')} {new Date().toLocaleTimeString('ar-YE', { hour: '2-digit', minute: '2-digit' })}</span>
-              <span className="font-mono">سعر الشريحة: من 0 إلى 4 = 700 ريال/م٣ | من 5 وما فوق = 1,000 ريال/م٣ | وحدة العمل = 2,000 ريال</span>
+              <span className="font-mono">السعر: 700 ريال/م٣ (1-4 م٣) | 1,000 ريال/م٣ (أكثر من 4 م٣) | وحدة العمل = 2,000 ريال</span>
             </div>
           </div>
         );

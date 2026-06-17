@@ -36,13 +36,20 @@ export function calculateBill(params: BillingParams): BillingResult {
   // Work units fee
   const workUnitsTotal = new Decimal(params.workUnits).times(wUnitPrice);
   
-  // Tier 1 calculation: From 0 to tier1Limit (usually 4)
-  const tier1Units = Decimal.min(consumption, t1Limit);
-  const tier1Cost = tier1Units.times(t1Price);
-  
-  // Tier 2 calculation: Above tier1Limit
-  const tier2Units = Decimal.max(consumption.minus(t1Limit), new Decimal(0));
-  const tier2Cost = tier2Units.times(t2Price);
+  // Flat pricing: all units at 700 if consumption <= 4, all units at 1000 if > 4
+  const { tier1Units, tier1Cost, tier2Units, tier2Cost } = consumption.lessThanOrEqualTo(t1Limit)
+    ? {
+        tier1Units: consumption,
+        tier1Cost: consumption.times(t1Price),
+        tier2Units: new Decimal(0),
+        tier2Cost: new Decimal(0),
+      }
+    : {
+        tier1Units: new Decimal(0),
+        tier1Cost: new Decimal(0),
+        tier2Units: consumption,
+        tier2Cost: consumption.times(t2Price),
+      };
   
   // Total Bill
   const totalAmount = workUnitsTotal.plus(tier1Cost).plus(tier2Cost);
