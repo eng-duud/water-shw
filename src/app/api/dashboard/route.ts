@@ -60,11 +60,11 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    const history = cycles.map(c => {
+    const history = cycles.map((c: any) => {
       const billCount = c.bills.length;
-      const consumed = c.bills.reduce((acc, b) => acc + Number(b.consumption), 0);
-      const billed = c.bills.reduce((acc, b) => acc + Number(b.totalAmount), 0);
-      const collected = c.bills.reduce((acc, b) => acc + Number(b.paidAmount), 0);
+      const consumed = c.bills.reduce((acc: any, b: any) => acc + Number(b.consumption), 0);
+      const billed = c.bills.reduce((acc: any, b: any) => acc + Number(b.totalAmount), 0);
+      const collected = c.bills.reduce((acc: any, b: any) => acc + Number(b.paidAmount), 0);
       return {
         id: c.id,
         name: `${c.year}/${String(c.month).padStart(2, '0')}`,
@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
         totalSurplus,
       },
       history,
-      recentPayments: recentPayments.map(p => ({
+      recentPayments: recentPayments.map((p: any) => ({
         id: p.id,
         customerName: p.customer.name,
         amount: Number(p.amount),

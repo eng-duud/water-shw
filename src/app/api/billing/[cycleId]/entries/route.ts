@@ -64,7 +64,7 @@ export async function POST(
     }
 
     // 3. Process each entry in a transaction
-    const results = await prisma.$transaction(async (tx) => {
+    const results = await prisma.$transaction(async (tx: any) => {
       const updatedBills = [];
 
       for (const entry of parsed.data.entries) {

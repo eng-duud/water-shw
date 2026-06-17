@@ -6,9 +6,9 @@ interface PaymentInput {
   tenantId: string;
   customerId: string;
   amount: number | string | Decimal;
-  paymentMethod?: string;
-  receiptNumber?: string;
-  notes?: string;
+  paymentMethod?: string | null;
+  receiptNumber?: string | null;
+  notes?: string | null;
 }
 
 export async function distributePayment(input: PaymentInput) {
@@ -17,7 +17,7 @@ export async function distributePayment(input: PaymentInput) {
     throw new Error("يجب أن يكون مبلغ السداد أكبر من الصفر.");
   }
 
-  return await prisma.$transaction(async (tx) => {
+  return await prisma.$transaction(async (tx: any) => {
     // 1. Fetch all pending or partially paid bills for this customer, oldest first
     const pendingBills = await tx.bill.findMany({
       where: {

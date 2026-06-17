@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create billing cycle and pre-generate draft bills for all active customers in a transaction
-    const cycle = await prisma.$transaction(async (tx) => {
+    const cycle = await prisma.$transaction(async (tx: any) => {
       const tenantSettings = await tx.tenantSettings.findUnique({
         where: { tenantId: TENANT_ID },
       });
