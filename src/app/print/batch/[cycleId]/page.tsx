@@ -16,6 +16,9 @@ interface BillData {
   tier1Cost: string;
   tier2Units: string;
   tier2Cost: string;
+  serviceFee: string;
+  fine: string;
+  exemption: string;
   totalAmount: string;
   paidAmount: string;
   notes: string | null;
@@ -119,8 +122,12 @@ export default function BatchBillsPrint() {
         const currentReading = Number(bill.currentReading);
         const consumption = Number(bill.consumption);
         const workUnits = bill.workUnits;
+        const tier1Units = Number(bill.tier1Units);
+        const tier2Units = Number(bill.tier2Units);
         const consumptionCost = Number(bill.tier1Cost) + Number(bill.tier2Cost);
-        const unitPrice = consumption > 4 ? 1000 : 700;
+        const serviceFee = Number(bill.serviceFee);
+        const fine = Number(bill.fine);
+        const exemption = Number(bill.exemption);
         const monthTotal = Number(bill.totalAmount);
         const previousBillAmount = Number(bill.previousBillAmount || 0);
         const previousBillPaid = Number(bill.previousBillPaid || 0);
@@ -171,38 +178,41 @@ export default function BatchBillsPrint() {
             {/* Main Consolidated Table */}
             <div className="overflow-x-auto">
               <table className="w-full border-collapse border border-black text-center text-[10px]">
-                <thead className="bg-gray-100">
-                  <tr className="border-b border-black">
-                    <th className="border-l border-black p-1" colSpan={2}>قراءة العداد</th>
-                    <th className="border-l border-black p-1" rowSpan={2}>وحدات فعلية</th>
-                    <th className="border-l border-black p-1" rowSpan={2}>السعر</th>
-                    <th className="border-l border-black p-1" rowSpan={2}>وحدات العمل</th>
-                    <th className="border-l border-black p-1" rowSpan={2}>قيمة الإستهلاك</th>
-                    <th className="border-l border-black p-1" rowSpan={2}>رسوم الخدمات</th>
-                    <th className="border-l border-black p-1" rowSpan={2}>الغرامات</th>
-                    <th className="border-l border-black p-1" rowSpan={2}>الإعفاءات</th>
-                    <th className="border-l border-black p-1" rowSpan={2}>إجمالي الشهر</th>
-                    <th className="border-l border-black p-1" colSpan={2}>الفاتورة السابقة</th>
-                    <th className="p-1" rowSpan={2}>إجمالي الفاتورة</th>
-                  </tr>
-                  <tr className="border-b border-black">
-                    <th className="border-l border-black p-0.5">الكلية (الحالية)</th>
-                    <th className="border-l border-black p-0.5">السابقة</th>
-                    <th className="border-l border-black p-0.5">القيمة</th>
-                    <th className="border-l border-black p-0.5">المسدد</th>
-                  </tr>
-                </thead>
+            <thead className="bg-gray-100">
+              <tr className="border-b border-black">
+                <th className="border-l border-black p-1" colSpan={2}>قراءة العداد</th>
+                <th className="border-l border-black p-1" rowSpan={2}>وحدات فعلية</th>
+                <th className="border-l border-black p-1" colSpan={2}>السعر</th>
+                <th className="border-l border-black p-1" rowSpan={2}>وحدات العمل</th>
+                <th className="border-l border-black p-1" rowSpan={2}>قيمة الإستهلاك</th>
+                <th className="border-l border-black p-1" rowSpan={2}>رسوم الخدمات</th>
+                <th className="border-l border-black p-1" rowSpan={2}>الغرامات</th>
+                <th className="border-l border-black p-1" rowSpan={2}>الإعفاءات</th>
+                <th className="border-l border-black p-1" rowSpan={2}>إجمالي الشهر</th>
+                <th className="border-l border-black p-1" colSpan={2}>الفاتورة السابقة</th>
+                <th className="p-1" rowSpan={2}>إجمالي الفاتورة</th>
+              </tr>
+              <tr className="border-b border-black">
+                <th className="border-l border-black p-0.5">الكلية (الحالية)</th>
+                <th className="border-l border-black p-0.5">السابقة</th>
+                <th className="border-l border-black p-0.5">الشريحة (1-4)</th>
+                <th className="border-l border-black p-0.5">الشريحة (&gt;4)</th>
+                <th className="border-l border-black p-0.5">القيمة</th>
+                <th className="border-l border-black p-0.5">المسدد</th>
+              </tr>
+            </thead>
                 <tbody>
                   <tr className="font-semibold text-slate-900">
                     <td className="border-l border-black p-1.5 font-mono">{currentReading.toFixed(2)}</td>
                     <td className="border-l border-black p-1.5 font-mono">{previousReading.toFixed(2)}</td>
                     <td className="border-l border-black p-1.5 font-mono">{consumption.toFixed(2)}</td>
-                    <td className="border-l border-black p-1.5 font-mono">{unitPrice}</td>
+                    <td className="border-l border-black p-1.5 font-mono">{tier1Units.toFixed(2)}</td>
+                    <td className="border-l border-black p-1.5 font-mono">{tier2Units.toFixed(2)}</td>
                     <td className="border-l border-black p-1.5 font-mono">{workUnits}</td>
                     <td className="border-l border-black p-1.5 font-mono">{consumptionCost.toLocaleString()}</td>
-                    <td className="border-l border-black p-1.5 font-mono">0</td>
-                    <td className="border-l border-black p-1.5 font-mono">0</td>
-                    <td className="border-l border-black p-1.5 font-mono">0</td>
+                    <td className="border-l border-black p-1.5 font-mono">{serviceFee.toLocaleString()}</td>
+                    <td className="border-l border-black p-1.5 font-mono">{fine.toLocaleString()}</td>
+                    <td className="border-l border-black p-1.5 font-mono">{exemption.toLocaleString()}</td>
                     <td className="border-l border-black p-1.5 font-mono">{monthTotal.toLocaleString()}</td>
                     <td className="border-l border-black p-1.5 font-mono">{previousBillAmount.toLocaleString()}</td>
                     <td className="border-l border-black p-1.5 font-mono">{previousBillPaid.toLocaleString()}</td>

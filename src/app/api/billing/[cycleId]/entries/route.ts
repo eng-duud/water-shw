@@ -12,6 +12,9 @@ const batchEntriesSchema = z.object({
       currentReading: z.number().min(0, 'القراءة الحالية يجب أن تكون أكبر من أو تساوي الصفر'),
       consumption: z.number().min(0).optional(),
       workUnits: z.number().int().min(0).optional(),
+      serviceFee: z.number().min(0).optional(),
+      fine: z.number().min(0).optional(),
+      exemption: z.number().min(0).optional(),
       meterPhotoUrl: z.string().optional().nullable(),
       notes: z.string().optional().nullable(),
     })
@@ -132,6 +135,9 @@ export async function POST(
                   tier1Cost: 0,
                   tier2Units: 0,
                   tier2Cost: 0,
+                  serviceFee: 0,
+                  fine: 0,
+                  exemption: 0,
                   totalAmount: 0,
                   paidAmount: 0,
                   status: 'PENDING',
@@ -145,6 +151,10 @@ export async function POST(
             // Use provided workUnits if available, otherwise use bill's default
             const effectiveWorkUnits = entry.workUnits !== undefined ? entry.workUnits : bill.workUnits;
 
+            const effectiveServiceFee = entry.serviceFee ?? bill.serviceFee ?? 0;
+            const effectiveFine = entry.fine ?? bill.fine ?? 0;
+            const effectiveExemption = entry.exemption ?? bill.exemption ?? 0;
+
             // Run calculation engine
             const calc = calculateBill({
               workUnits: effectiveWorkUnits,
@@ -155,6 +165,9 @@ export async function POST(
               tier1Limit: settings.tier1Limit,
               tier1Price: settings.tier1PricePerUnit,
               tier2Price: settings.tier2PricePerUnit,
+              serviceFee: effectiveServiceFee,
+              fine: effectiveFine,
+              exemption: effectiveExemption,
             });
 
             // Update database record
@@ -169,6 +182,9 @@ export async function POST(
                 tier1Cost: calc.tier1Cost,
                 tier2Units: calc.tier2Units,
                 tier2Cost: calc.tier2Cost,
+                serviceFee: calc.serviceFee,
+                fine: calc.fine,
+                exemption: calc.exemption,
                 totalAmount: calc.totalAmount,
                 meterPhotoUrl: entry.meterPhotoUrl || bill.meterPhotoUrl,
                 notes: entry.notes || bill.notes,

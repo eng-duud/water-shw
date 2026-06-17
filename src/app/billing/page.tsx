@@ -27,6 +27,9 @@ interface Bill {
   tier1Cost: string;
   tier2Units: string;
   tier2Cost: string;
+  serviceFee: string;
+  fine: string;
+  exemption: string;
   totalAmount: string;
   meterPhotoUrl: string | null;
   notes: string | null;
@@ -45,13 +48,15 @@ const PRICING = {
   tier2Price: 1000,
 };
 
-function calcClient(previous: number, current: number, workUnits: number) {
-  const consumption = Math.max(current - previous, 0);
+function calcClient(consumption: number, workUnits: number, serviceFee = 0, fine = 0, exemption = 0) {
   const workUnitsTotal = workUnits * PRICING.workUnitPrice;
-  const unitPrice = consumption <= PRICING.tier1Limit ? PRICING.tier1Price : PRICING.tier2Price;
-  const consumptionCost = consumption * unitPrice;
-  const totalAmount = workUnitsTotal + consumptionCost;
-  return { consumption, workUnitsTotal, unitPrice, consumptionCost, totalAmount };
+  const t1Units = Math.min(consumption, PRICING.tier1Limit);
+  const t1Cost = t1Units * PRICING.tier1Price;
+  const t2Units = Math.max(consumption - PRICING.tier1Limit, 0);
+  const t2Cost = t2Units * PRICING.tier2Price;
+  const consumptionCost = t1Cost + t2Cost;
+  const totalAmount = workUnitsTotal + consumptionCost + serviceFee + fine - exemption;
+  return { consumption, workUnitsTotal, t1Units, t1Cost, t2Units, t2Cost, consumptionCost, totalAmount };
 }
 
 export default function BillingPage() {
@@ -70,8 +75,10 @@ export default function BillingPage() {
     consumption: number;
     consumptionManual: boolean;
     workUnitsTotal: number;
-    unitPrice: number;
     consumptionCost: number;
+    serviceFee: number;
+    fine: number;
+    exemption: number;
     totalAmount: number;
   }>>({});
   const [unitTypes, setUnitTypes] = useState<Record<string, UnitType>>({});
@@ -135,8 +142,10 @@ export default function BillingPage() {
             consumption: 0,
             consumptionManual: false,
             workUnitsTotal: 0,
-            unitPrice: PRICING.tier1Price,
             consumptionCost: 0,
+            serviceFee: 0,
+            fine: 0,
+            exemption: 0,
             totalAmount: 0,
           };
         });
@@ -156,7 +165,10 @@ export default function BillingPage() {
           else if (work > 0) initU[b.id] = 'work';
           else initU[b.id] = 'regular';
 
-          const prevCalc = calcClient(Number(b.previousReading), Number(b.currentReading), work);
+          const sf = Number(b.serviceFee) || 0;
+          const fn = Number(b.fine) || 0;
+          const ex = Number(b.exemption) || 0;
+          const prevCalc = calcClient(consumption, work, sf, fn, ex);
           initR[b.id] = {
             currentReading: Number(b.currentReading),
             workUnits: work,
@@ -165,8 +177,10 @@ export default function BillingPage() {
             consumption: prevCalc.consumption,
             consumptionManual: false,
             workUnitsTotal: prevCalc.workUnitsTotal,
-            unitPrice: prevCalc.unitPrice,
             consumptionCost: prevCalc.consumptionCost,
+            serviceFee: sf,
+            fine: fn,
+            exemption: ex,
             totalAmount: prevCalc.totalAmount,
           };
         });
@@ -184,7 +198,7 @@ export default function BillingPage() {
     fetchCycles();
   }, []);
 
-  const recalc = (billId: string, overrides?: { currentReading?: number; workUnits?: number; consumption?: number }) => {
+  const recalc = (billId: string, overrides?: { currentReading?: number; workUnits?: number; consumption?: number; serviceFee?: number; fine?: number; exemption?: number }) => {
     const bill = bills.find(b => b.id === billId);
     if (!bill) return;
     const r = readings[billId];
@@ -193,6 +207,9 @@ export default function BillingPage() {
     const previous = Number(bill.previousReading);
     const current = overrides?.currentReading ?? r.currentReading;
     const work = overrides?.workUnits ?? r.workUnits;
+    const serviceFee = overrides?.serviceFee ?? r.serviceFee;
+    const fine = overrides?.fine ?? r.fine;
+    const exemption = overrides?.exemption ?? r.exemption;
 
     let consumption: number;
     let consumptionManual: boolean;
@@ -208,7 +225,7 @@ export default function BillingPage() {
       consumptionManual = false;
     }
 
-    const calc = calcClient(previous, current, work);
+    const calc = calcClient(consumption, work, serviceFee, fine, exemption);
     setReadings(prev => ({
       ...prev,
       [billId]: {
@@ -218,9 +235,11 @@ export default function BillingPage() {
         consumption,
         consumptionManual,
         workUnitsTotal: calc.workUnitsTotal,
-        unitPrice: calc.unitPrice,
-        consumptionCost: consumption * calc.unitPrice,
-        totalAmount: calc.workUnitsTotal + consumption * calc.unitPrice,
+        consumptionCost: calc.consumptionCost,
+        serviceFee,
+        fine,
+        exemption,
+        totalAmount: calc.totalAmount,
       }
     }));
   };
@@ -252,6 +271,21 @@ export default function BillingPage() {
     recalc(billId, { workUnits: numeric });
   };
 
+  const handleServiceFeeChange = (billId: string, value: string) => {
+    const numeric = parseFloat(value) || 0;
+    recalc(billId, { serviceFee: numeric });
+  };
+
+  const handleFineChange = (billId: string, value: string) => {
+    const numeric = parseFloat(value) || 0;
+    recalc(billId, { fine: numeric });
+  };
+
+  const handleExemptionChange = (billId: string, value: string) => {
+    const numeric = parseFloat(value) || 0;
+    recalc(billId, { exemption: numeric });
+  };
+
   const handleUploadPhoto = async (billId: string, file: File) => {
     try {
       setUploadingBillId(billId);
@@ -280,6 +314,9 @@ export default function BillingPage() {
         currentReading: data.currentReading,
         workUnits: data.workUnits,
         consumption: data.consumptionManual ? data.consumption : undefined,
+        serviceFee: data.serviceFee || undefined,
+        fine: data.fine || undefined,
+        exemption: data.exemption || undefined,
         meterPhotoUrl: data.meterPhotoUrl,
         notes: data.notes,
       };
@@ -319,6 +356,9 @@ export default function BillingPage() {
           currentReading: data.currentReading,
           workUnits: data.workUnits,
           consumption: data.consumptionManual ? data.consumption : undefined,
+          serviceFee: data.serviceFee || undefined,
+          fine: data.fine || undefined,
+          exemption: data.exemption || undefined,
           meterPhotoUrl: data.meterPhotoUrl,
           notes: data.notes,
         };
@@ -485,6 +525,9 @@ export default function BillingPage() {
                       <th className="p-3">وحدات العمل</th>
                       <th className="p-3">الاستهلاك</th>
                       <th className="p-3">رسوم الوحدات</th>
+                      <th className="p-3">رسوم الخدمات</th>
+                      <th className="p-3">الغرامات</th>
+                      <th className="p-3">الإعفاءات</th>
                       <th className="p-3">قيمة الاستهلاك</th>
                       <th className="p-3">المبلغ الإجمالي</th>
                       <th className="p-3">صورة العداد</th>
@@ -496,7 +539,6 @@ export default function BillingPage() {
                     {bills.map((b) => {
                       const r = readings[b.id];
                       const ut = unitTypes[b.id] || 'regular';
-                      const calc = r ? calcClient(Number(b.previousReading), r.currentReading, r.workUnits) : null;
                       const canEdit = activeCycle.status === 'DRAFT';
 
                       return (
@@ -581,11 +623,51 @@ export default function BillingPage() {
                             {(ut === 'work' || ut === 'both') ? ((r?.workUnitsTotal ?? 0).toLocaleString() + ' ريال') : '—'}
                           </td>
 
-                          {/* Consumption Cost (flat pricing) */}
-                          <td className="p-3 text-slate-600">
-                            {(ut === 'regular' || ut === 'both') && calc ? (
-                              <>{calc.consumption.toFixed(2)} × {calc.unitPrice} = {calc.consumptionCost.toLocaleString()} ريال</>
+                          {/* Service Fee */}
+                          <td className="p-3">
+                            {(ut === 'regular' || ut === 'both') ? (
+                              <input
+                                type="number"
+                                min={0}
+                                disabled={!canEdit}
+                                value={r?.serviceFee ?? 0}
+                                onChange={(e) => handleServiceFeeChange(b.id, e.target.value)}
+                                className="w-20 border border-slate-200 rounded-lg p-1 text-center font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-400"
+                              />
                             ) : '—'}
+                          </td>
+
+                          {/* Fine */}
+                          <td className="p-3">
+                            {(ut === 'regular' || ut === 'both') ? (
+                              <input
+                                type="number"
+                                min={0}
+                                disabled={!canEdit}
+                                value={r?.fine ?? 0}
+                                onChange={(e) => handleFineChange(b.id, e.target.value)}
+                                className="w-20 border border-slate-200 rounded-lg p-1 text-center font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-400"
+                              />
+                            ) : '—'}
+                          </td>
+
+                          {/* Exemption */}
+                          <td className="p-3">
+                            {(ut === 'regular' || ut === 'both') ? (
+                              <input
+                                type="number"
+                                min={0}
+                                disabled={!canEdit}
+                                value={r?.exemption ?? 0}
+                                onChange={(e) => handleExemptionChange(b.id, e.target.value)}
+                                className="w-20 border border-slate-200 rounded-lg p-1 text-center font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-400"
+                              />
+                            ) : '—'}
+                          </td>
+
+                          {/* Consumption Cost (tiered) */}
+                          <td className="p-3 text-slate-600">
+                            {(ut === 'regular' || ut === 'both') ? ((r?.consumptionCost ?? 0).toLocaleString() + ' ريال') : '—'}
                           </td>
 
                           {/* Total */}

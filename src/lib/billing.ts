@@ -10,6 +10,9 @@ interface BillingParams {
   tier1Limit?: Decimal | number | string;
   tier1Price?: Decimal | number | string;
   tier2Price?: Decimal | number | string;
+  serviceFee?: Decimal | number | string;
+  fine?: Decimal | number | string;
+  exemption?: Decimal | number | string;
 }
 
 interface BillingResult {
@@ -19,6 +22,9 @@ interface BillingResult {
   tier1Cost: Decimal;
   tier2Units: Decimal;
   tier2Cost: Decimal;
+  serviceFee: Decimal;
+  fine: Decimal;
+  exemption: Decimal;
   totalAmount: Decimal;
 }
 
@@ -39,23 +45,18 @@ export function calculateBill(params: BillingParams): BillingResult {
   // Work units fee
   const workUnitsTotal = new Decimal(params.workUnits).times(wUnitPrice);
   
-  // Flat pricing: all units at 700 if consumption <= 4, all units at 1000 if > 4
-  const { tier1Units, tier1Cost, tier2Units, tier2Cost } = consumption.lessThanOrEqualTo(t1Limit)
-    ? {
-        tier1Units: consumption,
-        tier1Cost: consumption.times(t1Price),
-        tier2Units: new Decimal(0),
-        tier2Cost: new Decimal(0),
-      }
-    : {
-        tier1Units: new Decimal(0),
-        tier1Cost: new Decimal(0),
-        tier2Units: consumption,
-        tier2Cost: consumption.times(t2Price),
-      };
+  // Progressive tiered pricing
+  const tier1Units = Decimal.min(consumption, t1Limit);
+  const tier1Cost = tier1Units.times(t1Price);
+  const tier2Units = Decimal.max(consumption.minus(t1Limit), new Decimal(0));
+  const tier2Cost = tier2Units.times(t2Price);
   
-  // Total Bill
-  const totalAmount = workUnitsTotal.plus(tier1Cost).plus(tier2Cost);
+  const serviceFee = new Decimal(params.serviceFee ?? 0);
+  const fine = new Decimal(params.fine ?? 0);
+  const exemption = new Decimal(params.exemption ?? 0);
+  
+  // Total Bill = work + water tiers + service fees + fines - exemptions
+  const totalAmount = workUnitsTotal.plus(tier1Cost).plus(tier2Cost).plus(serviceFee).plus(fine).minus(exemption);
   
   return {
     consumption,
@@ -64,6 +65,9 @@ export function calculateBill(params: BillingParams): BillingResult {
     tier1Cost,
     tier2Units,
     tier2Cost,
+    serviceFee,
+    fine,
+    exemption,
     totalAmount,
   };
 }
