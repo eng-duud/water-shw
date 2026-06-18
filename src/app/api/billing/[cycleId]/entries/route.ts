@@ -11,7 +11,7 @@ const batchEntriesSchema = z.object({
       customerId: z.string().optional(),
       currentReading: z.number().min(0, 'القراءة الحالية يجب أن تكون أكبر من أو تساوي الصفر'),
       consumption: z.number().min(0).optional(),
-      workUnits: z.number().int().min(0).optional(),
+      workUnits: z.number().min(0).optional(),
       serviceFee: z.number().min(0).optional(),
       fine: z.number().min(0).optional(),
       exemption: z.number().min(0).optional(),

@@ -8,6 +8,7 @@ interface Customer {
   accountNumber: string;
   name: string;
   phone: string | null;
+  village: string | null;
   address: string | null;
   workUnits: number;
   isActive: boolean;
@@ -27,7 +28,9 @@ export default function CustomersPage() {
   const [accountNumber, setAccountNumber] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [village, setVillage] = useState("");
   const [address, setAddress] = useState("");
+  const [workUnits, setWorkUnits] = useState("1");
   const [isActive, setIsActive] = useState(true);
   const [meterNumber, setMeterNumber] = useState("");
   const [photoUrl, setPhotoUrl] = useState("");
@@ -56,7 +59,9 @@ export default function CustomersPage() {
     setAccountNumber("");
     setName("");
     setPhone("");
+    setVillage("");
     setAddress("");
+    setWorkUnits("1");
     setIsActive(true);
     setMeterNumber("");
     setPhotoUrl("");
@@ -68,7 +73,9 @@ export default function CustomersPage() {
     setAccountNumber(c.accountNumber);
     setName(c.name);
     setPhone(c.phone || "");
+    setVillage(c.village || "");
     setAddress(c.address || "");
+    setWorkUnits(String(c.workUnits));
     setIsActive(c.isActive);
     setMeterNumber(c.meterNumber || "");
     setPhotoUrl(c.photoUrl || "");
@@ -104,7 +111,9 @@ export default function CustomersPage() {
           accountNumber,
           name,
           phone: phone || null,
+          village: village || null,
           address: address || null,
+          workUnits: parseFloat(workUnits) || 1,
           isActive,
           meterNumber: meterNumber || null,
           photoUrl: photoUrl || null,
@@ -129,7 +138,8 @@ export default function CustomersPage() {
     (c) =>
       c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.accountNumber.includes(searchQuery) ||
-      (c.phone && c.phone.includes(searchQuery))
+      (c.phone && c.phone.includes(searchQuery)) ||
+      (c.village && c.village.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   return (
@@ -143,7 +153,7 @@ export default function CustomersPage() {
           onClick={openAddModal}
           className="bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm px-5 py-2.5 rounded-xl shadow-sm transition-colors shrink-0"
         >
-          ➕ إضافة مشترك جديد
+          + إضافة مشترك جديد
         </button>
       </div>
 
@@ -152,7 +162,7 @@ export default function CustomersPage() {
         <span className="text-slate-400 ml-2">🔍</span>
         <input
           type="text"
-          placeholder="ابحث باسم المشترك، رقم الحساب، أو رقم الهاتف..."
+          placeholder="ابحث باسم المشترك، رقم الحساب، الهاتف، أو القرية..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full bg-transparent border-none text-sm focus:outline-none focus:ring-0 placeholder:text-slate-400"
@@ -173,7 +183,9 @@ export default function CustomersPage() {
                   <th className="p-4">رقم الحساب</th>
                   <th className="p-4">الاسم</th>
                   <th className="p-4">الهاتف</th>
+                  <th className="p-4">القرية</th>
                   <th className="p-4">العنوان</th>
+                  <th className="p-4">وحدات العمل</th>
                   <th className="p-4">رقم العداد</th>
                   <th className="p-4">الحالة</th>
                   <th className="p-4 text-center">الإجراءات</th>
@@ -200,7 +212,9 @@ export default function CustomersPage() {
                       </div>
                     </td>
                     <td className="p-4 text-slate-600">{c.phone || "—"}</td>
+                    <td className="p-4 text-slate-600">{c.village || "—"}</td>
                     <td className="p-4 text-slate-600">{c.address || "—"}</td>
+                    <td className="p-4 text-slate-600 font-mono">{Number(c.workUnits)}</td>
                     <td className="p-4 text-slate-600">{c.meterNumber || "—"}</td>
                     <td className="p-4">
                       <span
@@ -213,13 +227,20 @@ export default function CustomersPage() {
                         {c.isActive ? "نشط" : "غير نشط"}
                       </span>
                     </td>
-                    <td className="p-4 text-center">
+                    <td className="p-4 text-center space-x-1 space-x-reverse">
                       <button
                         onClick={() => openEditModal(c)}
                         className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
                       >
-                        ✏️ تعديل
+                        تعديل
                       </button>
+                      <a
+                        href={`/print/statement/${c.id}`}
+                        target="_blank"
+                        className="inline-block bg-sky-100 hover:bg-sky-200 text-sky-700 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
+                      >
+                        كشف حساب
+                      </a>
                     </td>
                   </tr>
                 ))}
@@ -284,6 +305,19 @@ export default function CustomersPage() {
                   />
                 </div>
                 <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">القرية</label>
+                  <input
+                    type="text"
+                    value={village}
+                    onChange={(e) => setVillage(e.target.value)}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    placeholder="مثال: قدس المواسط"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1">العنوان / الحارة</label>
                   <input
                     type="text"
@@ -291,6 +325,18 @@ export default function CustomersPage() {
                     onChange={(e) => setAddress(e.target.value)}
                     className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                     placeholder="مثال: حارة الوحدة"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">وحدات العمل</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={workUnits}
+                    onChange={(e) => setWorkUnits(e.target.value)}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    placeholder="مثال: 1 أو 0.5"
                   />
                 </div>
               </div>

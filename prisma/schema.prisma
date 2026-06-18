@@ -39,8 +39,9 @@ model Customer {
   accountNumber String
   name          String
   phone         String?
+  village       String?
   address       String?
-  workUnits     Int      @default(1)
+  workUnits     Decimal  @default(1) @db.Decimal(12, 2)
   isActive      Boolean  @default(true)
   meterNumber   String?
   photoUrl      String?
@@ -85,7 +86,7 @@ model Bill {
   consumption      Decimal    @db.Decimal(12, 2)
   meterPhotoUrl    String?
   
-  workUnits        Int
+  workUnits        Decimal    @db.Decimal(12, 2)
   workUnitsTotal   Decimal    @db.Decimal(12, 2)
   tier1Units       Decimal    @db.Decimal(12, 2)
   tier1Cost        Decimal    @db.Decimal(12, 2)

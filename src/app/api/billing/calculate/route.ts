@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma';
 import { TENANT_ID } from '@/lib/constants';
 
 const calculateRequestSchema = z.object({
-  workUnits: z.number().int().min(0),
+  workUnits: z.number().min(0),
   previousReading: z.number().min(0),
   currentReading: z.number().min(0),
 });

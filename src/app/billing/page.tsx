@@ -55,7 +55,9 @@ function calcClient(consumption: number, workUnits: number, serviceFee = 0, fine
   const t1Cost = t1Units * PRICING.tier1Price;
   const t2Units = Math.max(consumption - PRICING.tier1Limit, 0);
   const t2Cost = t2Units * PRICING.tier2Price;
-  const consumptionCost = t1Cost + t2Cost;
+  const rawConsumptionCost = t1Cost + t2Cost;
+  const MINIMUM_FEE = 1000;
+  const consumptionCost = Math.max(rawConsumptionCost, MINIMUM_FEE);
   const totalAmount = workUnitsTotal + consumptionCost + serviceFee + fine - exemption;
   return { consumption, workUnitsTotal, t1Units, t1Cost, t2Units, t2Cost, consumptionCost, totalAmount };
 }
@@ -262,7 +264,7 @@ export default function BillingPage() {
   };
 
   const handleWorkUnitsChange = (billId: string, value: string) => {
-    const numeric = parseInt(value) || 0;
+    const numeric = parseFloat(value) || 0;
     recalc(billId, { workUnits: numeric });
   };
 
@@ -585,13 +587,13 @@ export default function BillingPage() {
                           <td className="p-2">
                             {(ut === 'work' || ut === 'both') ? (
                               <input
-                                type="text"
-                                inputMode="numeric"
+                                type="number"
+                                step="0.01"
                                 min={0}
                                 disabled={!canEdit}
                                 value={r?.workUnits ?? 0}
                                 onChange={(e) => handleWorkUnitsChange(b.id, e.target.value)}
-                                className="w-14 border border-slate-200 rounded-lg p-1 text-center font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-400 no-spinner"
+                                className="w-16 border border-slate-200 rounded-lg p-1 text-center font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-400 no-spinner"
                               />
                             ) : '—'}
                           </td>

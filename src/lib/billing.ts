@@ -2,7 +2,7 @@
 import { DEFAULT_PRICING } from './constants';
 
 interface BillingParams {
-  workUnits: number;
+  workUnits: number | string | Decimal;
   previousReading: Decimal | number | string;
   currentReading: Decimal | number | string;
   consumptionOverride?: Decimal | number | string;

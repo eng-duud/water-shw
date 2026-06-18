@@ -20,6 +20,7 @@ interface ReceiptData {
     accountNumber: string;
     name: string;
     phone: string | null;
+    village: string | null;
     address: string | null;
     meterNumber: string | null;
   };
@@ -149,6 +150,12 @@ export default function ReceiptPrint() {
           <span className="text-gray-600 mx-2">|</span>
           <span className="text-gray-600">رقم المشترك: </span>
           <span className="font-bold font-mono">{receipt.customer.accountNumber}</span>
+          <span className="text-gray-600 mx-2">|</span>
+          <span className="text-gray-600">الهاتف: </span>
+          <span className="font-bold font-mono">{receipt.customer.phone || "—"}</span>
+          <span className="text-gray-600 mx-2">|</span>
+          <span className="text-gray-600">القرية: </span>
+          <span className="font-bold">{receipt.customer.village || "—"}</span>
           <span className="text-gray-600 mx-2">|</span>
           <span className="text-gray-600">رقم العداد: </span>
           <span className="font-bold font-mono">{receipt.customer.meterNumber || "—"}</span>

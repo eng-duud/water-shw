@@ -28,6 +28,7 @@ interface BillData {
     accountNumber: string;
     name: string;
     phone: string | null;
+    village: string | null;
     address: string | null;
     meterNumber: string | null;
   };
@@ -160,6 +161,12 @@ export default function SingleBillPrint() {
           <span className="text-gray-600">رقم المشترك: </span>
           <span className="font-bold font-mono">{bill.customer.accountNumber}</span>
           <span className="text-gray-600 mx-2">|</span>
+          <span className="text-gray-600">الهاتف: </span>
+          <span className="font-bold font-mono">{bill.customer.phone || "—"}</span>
+          <span className="text-gray-600 mx-2">|</span>
+          <span className="text-gray-600">القرية: </span>
+          <span className="font-bold">{bill.customer.village || "—"}</span>
+          <span className="text-gray-600 mx-2">|</span>
           <span className="text-gray-600">رقم العداد: </span>
           <span className="font-bold font-mono">{bill.customer.meterNumber || "—"}</span>
           <span className="text-gray-600 mx-2">|</span>
@@ -209,7 +216,7 @@ export default function SingleBillPrint() {
               <td className="border-l-2 border-black p-2 font-mono font-bold text-slate-800">{readingFormat(previousReading)}</td>
               <td className="border-l-2 border-black p-2 font-mono font-bold text-blue-700">{readingFormat(actualConsumption)}</td>
               <td className={`border-l-2 border-black p-2 font-mono font-bold ${isEstimated ? 'text-amber-700' : 'text-gray-300'}`}>{isEstimated ? readingFormat(storedConsumption) : '—'}</td>
-              <td className="border-l-2 border-black p-2 font-mono font-bold text-purple-700">{bill.workUnits > 0 ? bill.workUnits : '—'}</td>
+              <td className="border-l-2 border-black p-2 font-mono font-bold text-purple-700">{Number(bill.workUnits) > 0 ? Number(bill.workUnits) : '—'}</td>
               <td className="border-l-2 border-black p-2 font-mono font-bold text-emerald-700">{formatNum(consumptionCost)}</td>
               <td className="border-l-2 border-black p-2 font-mono font-bold text-sky-700">{serviceFee > 0 ? formatNum(serviceFee) : '—'}</td>
               <td className="border-l-2 border-black p-2 font-mono font-bold text-rose-600">{fine > 0 ? formatNum(fine) : '—'}</td>
