@@ -10,6 +10,28 @@ interface PaymentInput {
   notes?: string | null;
 }
 
+export async function generateReceiptNumber(tenantId: string): Promise<string> {
+  const now = new Date();
+  const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+  
+  // Count existing payments today
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const endOfDay = new Date(startOfDay.getTime() + 86400000);
+  
+  const count = await prisma.payment.count({
+    where: {
+      tenantId,
+      createdAt: {
+        gte: startOfDay,
+        lt: endOfDay,
+      },
+    },
+  });
+  
+  const seq = String(count + 1).padStart(3, '0');
+  return `RCP-${dateStr}-${seq}`;
+}
+
 export async function allocatePaymentToSingleBill(input: PaymentInput) {
   const amountDecimal = new Decimal(input.amount);
   if (amountDecimal.lessThanOrEqualTo(0)) {
@@ -21,7 +43,6 @@ export async function allocatePaymentToSingleBill(input: PaymentInput) {
   }
 
   return await prisma.$transaction(async (tx: any) => {
-    // Fetch all bills
     const bills = await tx.bill.findMany({
       where: { id: { in: input.billIds } },
       include: { customer: true },
@@ -32,7 +53,6 @@ export async function allocatePaymentToSingleBill(input: PaymentInput) {
       throw new Error('الفواتير المحددة غير موجودة');
     }
 
-    // Verify all bills belong to the same customer
     const customerId = bills[0].customerId;
     for (const bill of bills) {
       if (bill.customerId !== customerId) {
@@ -44,7 +64,6 @@ export async function allocatePaymentToSingleBill(input: PaymentInput) {
     let remainingAmount = amountDecimal;
     const allocations: Array<{ billId: string; amount: Decimal; billNumber: string }> = [];
 
-    // Distribute payment across bills (oldest first)
     for (const bill of bills) {
       if (remainingAmount.lessThanOrEqualTo(0)) break;
 
@@ -75,7 +94,12 @@ export async function allocatePaymentToSingleBill(input: PaymentInput) {
       remainingAmount = remainingAmount.minus(allocateAmount);
     }
 
-    // Create the payment
+    // Auto-generate receipt number if not provided
+    let receiptNumber = input.receiptNumber;
+    if (!receiptNumber) {
+      receiptNumber = await generateReceiptNumber(input.tenantId);
+    }
+
     const payment = await tx.payment.create({
       data: {
         tenantId: input.tenantId,
@@ -85,12 +109,11 @@ export async function allocatePaymentToSingleBill(input: PaymentInput) {
         surplusAmount: remainingAmount,
         surplusHandled: remainingAmount.lessThanOrEqualTo(0),
         paymentMethod: input.paymentMethod || null,
-        receiptNumber: input.receiptNumber || null,
+        receiptNumber,
         notes: input.notes || null,
       },
     });
 
-    // Create allocations
     for (const alloc of allocations) {
       await tx.paymentAllocation.create({
         data: {
@@ -104,6 +127,7 @@ export async function allocatePaymentToSingleBill(input: PaymentInput) {
 
     return {
       paymentId: payment.id,
+      receiptNumber,
       customerName: customer.name,
       billsCount: allocations.length,
       billNumbers: allocations.map((a) => a.billNumber),

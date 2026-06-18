@@ -61,7 +61,7 @@ export default function PaymentsPage() {
   const [selectedBillIds, setSelectedBillIds] = useState<string[]>([]);
   const [amount, setAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("CASH");
-  const [receiptNumber, setReceiptNumber] = useState("");
+  const [receiptNumber, setReceiptNumber] = useState("جاري التوليد...");
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -126,6 +126,16 @@ export default function PaymentsPage() {
     fetchBills();
   }, [selectedCustomerId]);
 
+  // Auto-generate receipt number when form is ready
+  useEffect(() => {
+    if (selectedCustomerId && unpaidBills.length > 0) {
+      fetch("/api/payments/next-receipt-number")
+        .then(res => res.json())
+        .then(data => setReceiptNumber(data.receiptNumber))
+        .catch(() => setReceiptNumber("—"));
+    }
+  }, [selectedCustomerId, unpaidBills.length]);
+
   const totalUnpaidSelected = selectedBillIds.reduce((sum, id) => {
     const bill = unpaidBills.find(b => b.id === id);
     return sum + (bill ? bill.unpaidAmount : 0);
@@ -168,9 +178,9 @@ export default function PaymentsPage() {
 
       setSelectedCustomerId("");
       setAmount("");
-      setReceiptNumber("");
       setNotes("");
       setSelectedBillIds([]);
+      setReceiptNumber("جاري التوليد...");
       fetchData();
     } catch (err: any) {
       alert(err.message || "حدث خطأ");
@@ -305,14 +315,10 @@ export default function PaymentsPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">رقم السند/المرجع</label>
-                <input
-                  type="text"
-                  value={receiptNumber}
-                  onChange={(e) => setReceiptNumber(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-                  placeholder="رقم السند الورقي"
-                />
+                <label className="block text-xs font-semibold text-slate-600 mb-1">رقم السند (تلقائي)</label>
+                <div className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-slate-50 font-bold text-brand-700 font-mono">
+                  {receiptNumber}
+                </div>
               </div>
             </div>
 
