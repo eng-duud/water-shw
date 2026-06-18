@@ -111,7 +111,7 @@ export default function BatchBillsPrint() {
         const currentReading = Number(bill.currentReading);
         const actualConsumption = Math.max(currentReading - previousReading, 0);
         const storedConsumption = Number(bill.consumption);
-        const isEstimated = storedConsumption !== actualConsumption && storedConsumption > 0;
+        const isEstimated = storedConsumption > 0 && Math.abs(storedConsumption - actualConsumption) > 0.01;
 
         const tier1Cost = Number(bill.tier1Cost);
         const tier2Cost = Number(bill.tier2Cost);
@@ -135,7 +135,6 @@ export default function BatchBillsPrint() {
             key={bill.id}
             className="bill-page-break bg-white p-6 max-w-[21cm] mx-auto text-black font-sans dir-rtl print:border-none print:shadow-none print:p-4"
           >
-            {/* === الترويسة === */}
             <div className="border-b-2 border-black pb-4 mb-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4 space-x-reverse">
@@ -157,7 +156,6 @@ export default function BatchBillsPrint() {
               </div>
             </div>
 
-            {/* === بيانات العميل === */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm border border-black p-3 mb-4 bg-gray-50/30">
               <div className="flex justify-between border-l border-gray-300 pl-2">
                 <span className="text-gray-600">رقم المشترك:</span>
@@ -185,7 +183,6 @@ export default function BatchBillsPrint() {
               </div>
             </div>
 
-            {/* === جدول تفاصيل الفاتورة === */}
             <div className="border border-black mb-4">
               <table className="w-full border-collapse text-sm">
                 <thead>
@@ -195,52 +192,50 @@ export default function BatchBillsPrint() {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr className="border-b border-gray-200 hover:bg-gray-50/50">
+                  <tr className="border-b border-gray-200">
                     <td className="border-l border-gray-200 p-2 pr-4 font-semibold">المتأخرات السابقة</td>
                     <td className="p-2 text-center font-mono font-bold text-rose-700">{formatNum(arrears)}</td>
                   </tr>
-                  <tr className="border-b border-gray-200 hover:bg-gray-50/50">
+                  <tr className="border-b border-gray-200">
                     <td className="border-l border-gray-200 p-2 pr-4">القراءة السابقة</td>
                     <td className="p-2 text-center font-mono">{readingFormat(previousReading)}</td>
                   </tr>
-                  <tr className="border-b border-gray-200 hover:bg-gray-50/50">
+                  <tr className="border-b border-gray-200">
                     <td className="border-l border-gray-200 p-2 pr-4">القراءة الحالية</td>
                     <td className="p-2 text-center font-mono">{readingFormat(currentReading)}</td>
                   </tr>
-                  <tr className="border-b border-gray-200 hover:bg-gray-50/50">
-                    <td className="border-l border-gray-200 p-2 pr-4">الاستهلاك الفعلي</td>
+                  <tr className="border-b border-gray-200">
+                    <td className="border-l border-gray-200 p-2 pr-4">الاستهلاك الفعلي (من القراءة)</td>
                     <td className="p-2 text-center font-mono">{readingFormat(actualConsumption)}</td>
                   </tr>
-                  {isEstimated && (
-                    <tr className="border-b border-gray-200 hover:bg-gray-50/50">
-                      <td className="border-l border-gray-200 p-2 pr-4 text-amber-700">الاستهلاك التقديري</td>
-                      <td className="p-2 text-center font-mono text-amber-700">{readingFormat(storedConsumption)}</td>
-                    </tr>
-                  )}
-                  <tr className="border-b border-gray-200 hover:bg-gray-50/50">
+                  <tr className="border-b border-gray-200">
+                    <td className="border-l border-gray-200 p-2 pr-4">الاستهلاك التقديري (المُدخل)</td>
+                    <td className="p-2 text-center font-mono">{isEstimated ? readingFormat(storedConsumption) : '—'}</td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
                     <td className="border-l border-gray-200 p-2 pr-4">قيمة الاستهلاك (الحد الأدنى {formatNum(MINIMUM_FEE)} ريال)</td>
                     <td className="p-2 text-center font-mono font-bold">{formatNum(consumptionCost)}</td>
                   </tr>
                   {(serviceFee > 0) && (
-                    <tr className="border-b border-gray-200 hover:bg-gray-50/50">
+                    <tr className="border-b border-gray-200">
                       <td className="border-l border-gray-200 p-2 pr-4">رسوم الخدمات</td>
                       <td className="p-2 text-center font-mono">{formatNum(serviceFee)}</td>
                     </tr>
                   )}
                   {(fine > 0) && (
-                    <tr className="border-b border-gray-200 hover:bg-gray-50/50">
+                    <tr className="border-b border-gray-200">
                       <td className="border-l border-gray-200 p-2 pr-4 text-rose-600">الغرامات</td>
                       <td className="p-2 text-center font-mono text-rose-600">{formatNum(fine)}</td>
                     </tr>
                   )}
                   {(exemption > 0) && (
-                    <tr className="border-b border-gray-200 hover:bg-gray-50/50">
+                    <tr className="border-b border-gray-200">
                       <td className="border-l border-gray-200 p-2 pr-4 text-emerald-600">الإعفاءات</td>
                       <td className="p-2 text-center font-mono text-emerald-600">({formatNum(exemption)})</td>
                     </tr>
                   )}
                   {(bill.workUnits > 0) && (
-                    <tr className="border-b border-gray-200 hover:bg-gray-50/50">
+                    <tr className="border-b border-gray-200">
                       <td className="border-l border-gray-200 p-2 pr-4">وحدات العمل ({bill.workUnits} وحدة)</td>
                       <td className="p-2 text-center font-mono">{formatNum(Number(bill.workUnitsTotal))}</td>
                     </tr>
@@ -257,14 +252,12 @@ export default function BatchBillsPrint() {
               </table>
             </div>
 
-            {/* === المبلغ بالكتابة === */}
             <div className="text-right text-sm font-bold border border-black p-2 mb-4 bg-gray-50/30">
               <span>المبلغ المستحق: </span>
               <span className="border-b border-dotted border-black px-2 text-rose-700">{totalWords} ريال يمني</span>
               <span> لا غير</span>
             </div>
 
-            {/* === الضوابط والشروط === */}
             <div className="text-xs space-y-1.5 text-slate-800 leading-relaxed border border-black p-3 mb-4 bg-gray-50/30">
               <p className="font-bold text-center border-b border-gray-300 pb-1.5 mb-1.5">الضوابط والشروط</p>
               <p>1. التزام السداد: يجب تسديد المبلغ أولاً بأول وعدم التأخير لتجنب انقطاع الخدمة.</p>
@@ -273,7 +266,6 @@ export default function BatchBillsPrint() {
               <p>4. الحد الأدنى: يتم دفع 1,000 ريال كحد أدنى للرسوم حتى في حالة عدم الاستهلاك.</p>
             </div>
 
-            {/* === التوقيع والختم === */}
             <div className="flex justify-between items-center text-sm border-t-2 border-black pt-4 mb-4">
               <div className="text-center">
                 <p className="font-bold mb-1">الختم</p>

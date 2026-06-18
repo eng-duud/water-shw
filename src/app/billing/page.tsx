@@ -31,6 +31,7 @@ interface Bill {
   fine: string;
   exemption: string;
   totalAmount: string;
+  arrears?: number;
   meterPhotoUrl: string | null;
   notes: string | null;
   customer: {
@@ -72,14 +73,15 @@ export default function BillingPage() {
     workUnits: number;
     meterPhotoUrl: string | null;
     notes: string | null;
-    consumption: number;
-    consumptionManual: boolean;
+    actualConsumption: number;
+    estimatedConsumption: number;
     workUnitsTotal: number;
     consumptionCost: number;
     serviceFee: number;
     fine: number;
     exemption: number;
     totalAmount: number;
+    arrears: number;
   }>>({});
   const [unitTypes, setUnitTypes] = useState<Record<string, UnitType>>({});
   const [savingReadings, setSavingReadings] = useState(false);
@@ -131,6 +133,7 @@ export default function BillingPage() {
           tier2Units: "0",
           tier2Cost: "0",
           totalAmount: "0",
+          arrears: 0,
           meterPhotoUrl: null,
           notes: null,
           customer: c.customer,
@@ -148,29 +151,36 @@ export default function BillingPage() {
       const initU: Record<string, UnitType> = {};
       mergedBills.forEach((b: any) => {
         const isPending = b.id.startsWith('pending_');
-        const consumption = Number(b.consumption || 0);
+        const storedConsumption = Number(b.consumption || 0);
         const work = b.workUnits || 0;
+        const prevReading = Number(b.previousReading);
+        const currReading = isPending ? prevReading : Number(b.currentReading);
+        const actualConsumption = Math.max(currReading - prevReading, 0);
+        const estimatedConsumption = (storedConsumption > 0 && Math.abs(storedConsumption - actualConsumption) > 0.01) ? storedConsumption : 0;
 
-        initU[b.id] = (work > 0 && consumption > 0) ? 'both' : (work > 0) ? 'work' : 'regular';
+        const effectiveConsumption = estimatedConsumption > 0 ? estimatedConsumption : actualConsumption;
+
+        initU[b.id] = (work > 0 && effectiveConsumption > 0) ? 'both' : (work > 0) ? 'work' : 'regular';
 
         const sf = Number(b.serviceFee) || 0;
         const fn = Number(b.fine) || 0;
         const ex = Number(b.exemption) || 0;
-        const prevCalc = calcClient(consumption, work, sf, fn, ex);
+        const prevCalc = calcClient(effectiveConsumption, work, sf, fn, ex);
 
         initR[b.id] = {
-          currentReading: isPending ? Number(b.previousReading) : Number(b.currentReading),
+          currentReading: currReading,
           workUnits: work,
           meterPhotoUrl: b.meterPhotoUrl || null,
           notes: b.notes || null,
-          consumption: prevCalc.consumption,
-          consumptionManual: false,
+          actualConsumption,
+          estimatedConsumption: estimatedConsumption,
           workUnitsTotal: prevCalc.workUnitsTotal,
           consumptionCost: prevCalc.consumptionCost,
           serviceFee: sf,
           fine: fn,
           exemption: ex,
           totalAmount: prevCalc.totalAmount,
+          arrears: b.arrears || 0,
         };
       });
       setReadings(initR);
@@ -186,7 +196,7 @@ export default function BillingPage() {
     fetchCycles();
   }, []);
 
-  const recalc = (billId: string, overrides?: { currentReading?: number; workUnits?: number; consumption?: number; serviceFee?: number; fine?: number; exemption?: number }) => {
+  const recalc = (billId: string, overrides?: { currentReading?: number; workUnits?: number; estimatedConsumption?: number; serviceFee?: number; fine?: number; exemption?: number }) => {
     const bill = bills.find(b => b.id === billId);
     if (!bill) return;
     const r = readings[billId];
@@ -199,29 +209,22 @@ export default function BillingPage() {
     const fine = overrides?.fine ?? r.fine;
     const exemption = overrides?.exemption ?? r.exemption;
 
-    let consumption: number;
-    let consumptionManual: boolean;
+    const actualConsumption = Math.max(current - previous, 0);
+    const estimatedConsumption = overrides?.estimatedConsumption !== undefined
+      ? overrides.estimatedConsumption
+      : (overrides?.currentReading !== undefined ? 0 : r.estimatedConsumption);
 
-    if (overrides?.consumption !== undefined) {
-      consumption = overrides.consumption;
-      consumptionManual = true;
-    } else if (r.consumptionManual && overrides?.consumption === undefined && overrides?.currentReading === undefined) {
-      consumption = r.consumption;
-      consumptionManual = true;
-    } else {
-      consumption = Math.max(current - previous, 0);
-      consumptionManual = false;
-    }
+    const effectiveConsumption = estimatedConsumption > 0 ? estimatedConsumption : actualConsumption;
 
-    const calc = calcClient(consumption, work, serviceFee, fine, exemption);
+    const calc = calcClient(effectiveConsumption, work, serviceFee, fine, exemption);
     setReadings(prev => ({
       ...prev,
       [billId]: {
         ...prev[billId],
         currentReading: current,
         workUnits: work,
-        consumption,
-        consumptionManual,
+        actualConsumption,
+        estimatedConsumption,
         workUnitsTotal: calc.workUnitsTotal,
         consumptionCost: calc.consumptionCost,
         serviceFee,
@@ -236,13 +239,12 @@ export default function BillingPage() {
     setUnitTypes(prev => ({ ...prev, [billId]: unitType }));
     const bill = bills.find(b => b.id === billId);
     if (!bill) return;
-    const previous = Number(bill.previousReading);
 
     if (unitType === 'regular') {
       recalc(billId, { workUnits: 0 });
     } else if (unitType === 'work') {
       const defaultWork = bill.workUnits || 1;
-      recalc(billId, { currentReading: previous, workUnits: defaultWork });
+      recalc(billId, { workUnits: defaultWork });
     } else {
       const defaultWork = bill.workUnits || 1;
       recalc(billId, { workUnits: defaultWork });
@@ -252,6 +254,11 @@ export default function BillingPage() {
   const handleReadingChange = (billId: string, value: string) => {
     const numeric = parseFloat(value) || 0;
     recalc(billId, { currentReading: numeric });
+  };
+
+  const handleEstimatedConsumptionChange = (billId: string, value: string) => {
+    const numeric = parseFloat(value) || 0;
+    recalc(billId, { estimatedConsumption: numeric });
   };
 
   const handleWorkUnitsChange = (billId: string, value: string) => {
@@ -301,7 +308,7 @@ export default function BillingPage() {
       const entry: any = {
         currentReading: data.currentReading,
         workUnits: data.workUnits,
-        consumption: data.consumptionManual ? data.consumption : undefined,
+        consumption: data.estimatedConsumption > 0 ? data.estimatedConsumption : undefined,
         serviceFee: data.serviceFee,
         fine: data.fine,
         exemption: data.exemption,
@@ -343,7 +350,7 @@ export default function BillingPage() {
         const entry: any = {
           currentReading: data.currentReading,
           workUnits: data.workUnits,
-          consumption: data.consumptionManual ? data.consumption : undefined,
+          consumption: data.estimatedConsumption > 0 ? data.estimatedConsumption : undefined,
           serviceFee: data.serviceFee,
           fine: data.fine,
           exemption: data.exemption,
@@ -505,22 +512,24 @@ export default function BillingPage() {
                 <table className="w-full text-right border-collapse">
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600">
-                      <th className="p-3">حساب</th>
-                      <th className="p-3">الاسم</th>
-                      <th className="p-3">النوع</th>
-                      <th className="p-3">القراءة السابقة</th>
-                      <th className="p-3">القراءة الحالية</th>
-                      <th className="p-3">وحدات العمل</th>
-                      <th className="p-3">الاستهلاك</th>
-                      <th className="p-3">رسوم الوحدات</th>
-                      <th className="p-3">رسوم الخدمات</th>
-                      <th className="p-3">الغرامات</th>
-                      <th className="p-3">الإعفاءات</th>
-                      <th className="p-3">قيمة الاستهلاك</th>
-                      <th className="p-3">المبلغ الإجمالي</th>
-                      <th className="p-3">صورة العداد</th>
-                      <th className="p-3">ملاحظات</th>
-                      <th className="p-3 text-center">الفاتورة</th>
+                      <th className="p-2">حساب</th>
+                      <th className="p-2">الاسم</th>
+                      <th className="p-2">النوع</th>
+                      <th className="p-2">القراءة السابقة</th>
+                      <th className="p-2">القراءة الحالية</th>
+                      <th className="p-2">وحدات العمل</th>
+                      <th className="p-2">الاستهلاك الفعلي</th>
+                      <th className="p-2">الاستهلاك التقديري</th>
+                      <th className="p-2">رسوم الوحدات</th>
+                      <th className="p-2">رسوم الخدمات</th>
+                      <th className="p-2">الغرامات</th>
+                      <th className="p-2">الإعفاءات</th>
+                      <th className="p-2">قيمة الاستهلاك</th>
+                      <th className="p-2">المتأخرات</th>
+                      <th className="p-2">المبلغ الإجمالي</th>
+                      <th className="p-2">صورة العداد</th>
+                      <th className="p-2">ملاحظات</th>
+                      <th className="p-2 text-center">الفاتورة</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-xs">
@@ -531,11 +540,11 @@ export default function BillingPage() {
 
                       return (
                         <tr key={b.id} className="hover:bg-slate-50/50">
-                          <td className="p-3 font-bold text-slate-700">{b.customer.accountNumber}</td>
-                          <td className="p-3 font-semibold text-slate-800">{b.customer.name}</td>
+                          <td className="p-2 font-bold text-slate-700">{b.customer.accountNumber}</td>
+                          <td className="p-2 font-semibold text-slate-800 whitespace-nowrap">{b.customer.name}</td>
 
                           {/* Type selector */}
-                          <td className="p-3">
+                          <td className="p-2">
                             {canEdit ? (
                               <select
                                 value={ut}
@@ -554,120 +563,130 @@ export default function BillingPage() {
                           </td>
 
                           {/* Previous Reading */}
-                          <td className="p-3 text-slate-600">
-                            {(ut === 'regular' || ut === 'both') ? Number(b.previousReading) : '—'}
+                          <td className="p-2 text-slate-600">
+                            {(ut === 'regular' || ut === 'both') ? Number(b.previousReading).toFixed(2) : '—'}
                           </td>
 
                           {/* Current Reading */}
-                          <td className="p-3">
+                          <td className="p-2">
                             {(ut === 'regular' || ut === 'both') ? (
                               <input
-                                type="number"
-                                step="any"
+                                type="text"
+                                inputMode="decimal"
                                 disabled={!canEdit}
                                 value={r?.currentReading ?? Number(b.previousReading)}
                                 onChange={(e) => handleReadingChange(b.id, e.target.value)}
-                                className="w-24 border border-slate-200 rounded-lg p-1 text-center font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-400"
+                                className="w-20 border border-slate-200 rounded-lg p-1 text-center font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-400 no-spinner"
                               />
                             ) : '—'}
                           </td>
 
                           {/* Work Units */}
-                          <td className="p-3">
+                          <td className="p-2">
                             {(ut === 'work' || ut === 'both') ? (
                               <input
-                                type="number"
+                                type="text"
+                                inputMode="numeric"
                                 min={0}
                                 disabled={!canEdit}
                                 value={r?.workUnits ?? 0}
                                 onChange={(e) => handleWorkUnitsChange(b.id, e.target.value)}
-                                className="w-16 border border-slate-200 rounded-lg p-1 text-center font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-400"
+                                className="w-14 border border-slate-200 rounded-lg p-1 text-center font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-400 no-spinner"
                               />
                             ) : '—'}
                           </td>
 
-                          {/* Consumption */}
-                          <td className="p-3">
+                          {/* Actual Consumption */}
+                          <td className="p-2 text-slate-600 font-bold">
+                            {(ut === 'regular' || ut === 'both') ? (r?.actualConsumption ?? 0).toFixed(2) : '—'}
+                          </td>
+
+                          {/* Estimated Consumption */}
+                          <td className="p-2">
                             {(ut === 'regular' || ut === 'both') ? (
                               <input
-                                type="number"
-                                step="any"
-                                min={0}
+                                type="text"
+                                inputMode="decimal"
                                 disabled={!canEdit}
-                                value={r?.consumption ?? 0}
-                                onChange={(e) => {
-                                  const val = parseFloat(e.target.value) || 0;
-                                  recalc(b.id, { consumption: val });
-                                }}
-                                className="w-20 border border-slate-200 rounded-lg p-1 text-center font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-400"
+                                value={r?.estimatedConsumption ?? 0}
+                                onChange={(e) => handleEstimatedConsumptionChange(b.id, e.target.value)}
+                                className="w-16 border border-slate-200 rounded-lg p-1 text-center font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-400 no-spinner"
                               />
-                            ) : (
-                              <span className="font-bold text-slate-700">0.00</span>
-                            )}
+                            ) : '—'}
                           </td>
 
                           {/* Work Units Total */}
-                          <td className="p-3 text-slate-600">
+                          <td className="p-2 text-slate-600">
                             {(ut === 'work' || ut === 'both') ? ((r?.workUnitsTotal ?? 0).toLocaleString() + ' ريال') : '—'}
                           </td>
 
                           {/* Service Fee */}
-                          <td className="p-3">
+                          <td className="p-2">
                             {(ut === 'regular' || ut === 'both') ? (
                               <input
-                                type="number"
+                                type="text"
+                                inputMode="decimal"
                                 min={0}
                                 disabled={!canEdit}
                                 value={r?.serviceFee ?? 0}
                                 onChange={(e) => handleServiceFeeChange(b.id, e.target.value)}
-                                className="w-20 border border-slate-200 rounded-lg p-1 text-center font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-400"
+                                className="w-16 border border-slate-200 rounded-lg p-1 text-center font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-400 no-spinner"
                               />
                             ) : '—'}
                           </td>
 
                           {/* Fine */}
-                          <td className="p-3">
+                          <td className="p-2">
                             {(ut === 'regular' || ut === 'both') ? (
                               <input
-                                type="number"
+                                type="text"
+                                inputMode="decimal"
                                 min={0}
                                 disabled={!canEdit}
                                 value={r?.fine ?? 0}
                                 onChange={(e) => handleFineChange(b.id, e.target.value)}
-                                className="w-20 border border-slate-200 rounded-lg p-1 text-center font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-400"
+                                className="w-16 border border-slate-200 rounded-lg p-1 text-center font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-400 no-spinner"
                               />
                             ) : '—'}
                           </td>
 
                           {/* Exemption */}
-                          <td className="p-3">
+                          <td className="p-2">
                             {(ut === 'regular' || ut === 'both') ? (
                               <input
-                                type="number"
+                                type="text"
+                                inputMode="decimal"
                                 min={0}
                                 disabled={!canEdit}
                                 value={r?.exemption ?? 0}
                                 onChange={(e) => handleExemptionChange(b.id, e.target.value)}
-                                className="w-20 border border-slate-200 rounded-lg p-1 text-center font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-400"
+                                className="w-16 border border-slate-200 rounded-lg p-1 text-center font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-400 no-spinner"
                               />
                             ) : '—'}
                           </td>
 
                           {/* Consumption Cost (tiered) */}
-                          <td className="p-3 text-slate-600">
+                          <td className="p-2 text-slate-600">
                             {(ut === 'regular' || ut === 'both') ? ((r?.consumptionCost ?? 0).toLocaleString() + ' ريال') : '—'}
                           </td>
 
+                          {/* Arrears */}
+                          <td className="p-2">
+                            <span className="font-bold text-rose-600">
+                              {(r?.arrears ?? 0) > 0 ? (r.arrears.toLocaleString() + ' ريال') : '—'}
+                            </span>
+                          </td>
+
                           {/* Total */}
-                          <td className="p-3 font-extrabold text-brand-600">
+                          <td className="p-2 font-extrabold text-brand-600">
                             {(r?.totalAmount ?? 0).toLocaleString()} ريال
                           </td>
 
                           {/* Photo */}
-                          <td className="p-3">
+                          <td className="p-2">
                             {canEdit ? (
                               <div className="flex items-center space-x-1 space-x-reverse">
-                                <label className="cursor-pointer bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded text-[10px] font-semibold border border-slate-200">
+                                <label className="cursor-pointer bg-slate-100 hover:bg-slate-200 px-1.5 py-0.5 rounded text-[9px] font-semibold border border-slate-200">
                                   📸 رفع
                                   <input
                                     type="file"
@@ -679,20 +698,20 @@ export default function BillingPage() {
                                     className="hidden"
                                   />
                                 </label>
-                                {uploadingBillId === b.id && <span className="text-[9px] text-slate-400">جاري الرفع...</span>}
+                                {uploadingBillId === b.id && <span className="text-[9px] text-slate-400">...</span>}
                                 {r?.meterPhotoUrl && (
-                                  <a href={r.meterPhotoUrl} target="_blank" className="text-emerald-600 text-xs">✔️</a>
+                                  <a href={r.meterPhotoUrl} target="_blank" className="text-emerald-600 text-[10px]">✔️</a>
                                 )}
                               </div>
                             ) : (
                               r?.meterPhotoUrl ? (
-                                <a href={r.meterPhotoUrl} target="_blank" className="text-brand-600 hover:underline text-[10px]">عرض الصورة</a>
+                                <a href={r.meterPhotoUrl} target="_blank" className="text-brand-600 hover:underline text-[10px]">عرض</a>
                               ) : "—"
                             )}
                           </td>
 
                           {/* Notes */}
-                          <td className="p-3">
+                          <td className="p-2">
                             <input
                               type="text"
                               disabled={!canEdit}
@@ -704,26 +723,26 @@ export default function BillingPage() {
                                   [b.id]: { ...prev[b.id], notes: val }
                                 }));
                               }}
-                              placeholder="لا يوجد"
-                              className="w-28 border border-slate-200 rounded-lg p-1 text-xs focus:outline-none disabled:bg-transparent disabled:border-none"
+                              placeholder="—"
+                              className="w-20 border border-slate-200 rounded-lg p-1 text-[10px] focus:outline-none disabled:bg-transparent disabled:border-none"
                             />
                           </td>
 
-                          <td className="p-3 text-center">
+                          <td className="p-2 text-center">
                             {activeCycle.status === 'DRAFT' && (
-                              <div className="flex items-center justify-center space-x-2 space-x-reverse">
+                              <div className="flex items-center justify-center space-x-1 space-x-reverse">
                                 <button
                                   onClick={() => handleSaveBill(b.id)}
                                   disabled={savingBillId === b.id}
-                                  className="bg-brand-600 hover:bg-brand-700 text-white text-[10px] px-2 py-1 rounded font-bold transition-colors disabled:opacity-50"
+                                  className="bg-brand-600 hover:bg-brand-700 text-white text-[9px] px-1.5 py-0.5 rounded font-bold transition-colors disabled:opacity-50"
                                 >
-                                  {savingBillId === b.id ? '...' : '📥 ترحيل'}
+                                  {savingBillId === b.id ? '...' : '📥 حفظ'}
                                 </button>
                                 {!b.id.startsWith('pending_') && (
                                   <Link
                                     href={`/print/bill/${b.id}`}
                                     target="_blank"
-                                    className="bg-slate-100 hover:bg-slate-200 text-slate-800 text-[10px] px-2 py-1 rounded font-bold border border-slate-200"
+                                    className="bg-slate-100 hover:bg-slate-200 text-slate-800 text-[9px] px-1.5 py-0.5 rounded font-bold border border-slate-200"
                                   >
                                     🖨️ طباعة
                                   </Link>
@@ -734,7 +753,7 @@ export default function BillingPage() {
                               <Link
                                 href={`/print/bill/${b.id}`}
                                 target="_blank"
-                                className="bg-slate-100 hover:bg-slate-200 text-slate-800 text-[10px] px-2 py-1 rounded font-bold border border-slate-200"
+                                className="bg-slate-100 hover:bg-slate-200 text-slate-800 text-[9px] px-1.5 py-0.5 rounded font-bold border border-slate-200"
                               >
                                 🖨️ طباعة
                               </Link>

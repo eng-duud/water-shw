@@ -44,6 +44,17 @@ body {
   border-left: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+/* Remove number input spinners from fields with .no-spinner class */
+.no-spinner::-webkit-outer-spin-button,
+.no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+}
+.no-spinner {
+  -moz-appearance: textfield !important;
+  appearance: textfield !important;
+}
+
 /* Print CSS Configurations */
 @media print {
   /* Hide dashboard navigation, header, action buttons, and filters */

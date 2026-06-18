@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 interface Customer {
   id: string;
@@ -360,19 +361,20 @@ export default function PaymentsPage() {
                   <th className="p-3">الموزع</th>
                   <th className="p-3">الرصيد المعلق</th>
                   <th className="p-3">حالة الرصيد</th>
+                  <th className="p-3 text-center">سند القبض</th>
                   <th className="p-3 text-center">إجراء</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs">
-                {loading ? (
-                  <tr>
-                    <td colSpan={8} className="text-center p-8 text-slate-400">جاري تحميل سجل السندات...</td>
-                  </tr>
-                ) : payments.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="text-center p-8 text-slate-400">لا يوجد سندات تحصيل مسجلة.</td>
-                  </tr>
-                ) : (
+                  {loading ? (
+                    <tr>
+                      <td colSpan={9} className="text-center p-8 text-slate-400">جاري تحميل سجل السندات...</td>
+                    </tr>
+                  ) : payments.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="text-center p-8 text-slate-400">لا يوجد سندات تحصيل مسجلة.</td>
+                    </tr>
+                  ) : (
                   payments.map((p) => {
                     const firstAlloc = p.allocations?.[0];
                     return (
@@ -393,6 +395,15 @@ export default function PaymentsPage() {
                           ) : (
                             <span className="bg-amber-50 text-amber-700 border border-amber-100 px-2 py-0.5 rounded text-[10px] font-bold">معلق</span>
                           )}
+                        </td>
+                        <td className="p-3 text-center">
+                          <Link
+                            href={`/print/receipt/${p.id}`}
+                            target="_blank"
+                            className="bg-slate-100 hover:bg-slate-200 text-slate-800 text-[10px] font-bold px-2 py-1 rounded border border-slate-200"
+                          >
+                            🖨️ سند
+                          </Link>
                         </td>
                         <td className="p-3 text-center">
                           {Number(p.surplusAmount) > 0 && !p.surplusHandled && (
