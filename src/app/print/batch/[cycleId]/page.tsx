@@ -111,7 +111,7 @@ export default function BatchBillsPrint() {
         const currentReading = Number(bill.currentReading);
         const actualConsumption = Math.max(currentReading - previousReading, 0);
         const storedConsumption = Number(bill.consumption);
-        const isEstimated = storedConsumption > 0 && Math.abs(storedConsumption - actualConsumption) > 0.01;
+        const isEstimated = storedConsumption !== actualConsumption && storedConsumption > 0;
 
         const tier1Cost = Number(bill.tier1Cost);
         const tier2Cost = Number(bill.tier2Cost);
@@ -205,13 +205,15 @@ export default function BatchBillsPrint() {
                     <td className="p-2 text-center font-mono">{readingFormat(currentReading)}</td>
                   </tr>
                   <tr className="border-b border-gray-200">
-                    <td className="border-l border-gray-200 p-2 pr-4">الاستهلاك الفعلي (من القراءة)</td>
+                    <td className="border-l border-gray-200 p-2 pr-4">الاستهلاك الفعلي</td>
                     <td className="p-2 text-center font-mono">{readingFormat(actualConsumption)}</td>
                   </tr>
-                  <tr className="border-b border-gray-200">
-                    <td className="border-l border-gray-200 p-2 pr-4">الاستهلاك التقديري (المُدخل)</td>
-                    <td className="p-2 text-center font-mono">{isEstimated ? readingFormat(storedConsumption) : '—'}</td>
-                  </tr>
+                  {isEstimated && (
+                    <tr className="border-b border-gray-200">
+                      <td className="border-l border-gray-200 p-2 pr-4 text-amber-700">الاستهلاك التقديري</td>
+                      <td className="p-2 text-center font-mono text-amber-700">{readingFormat(storedConsumption)}</td>
+                    </tr>
+                  )}
                   <tr className="border-b border-gray-200">
                     <td className="border-l border-gray-200 p-2 pr-4">قيمة الاستهلاك (الحد الأدنى {formatNum(MINIMUM_FEE)} ريال)</td>
                     <td className="p-2 text-center font-mono font-bold">{formatNum(consumptionCost)}</td>
