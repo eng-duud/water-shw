@@ -108,26 +108,36 @@ export default function ReceiptPrint() {
   return (
     <div className="print-container bg-white p-4 max-w-[21cm] mx-auto text-black font-sans dir-rtl space-y-3">
       {/* HEADER */}
-      <div className="flex justify-between items-center border-b-2 border-black pb-2">
-        <div className="flex items-center space-x-3 space-x-reverse">
-          <img
-            src="/logo.png"
-            alt="شعار المشروع"
-            className="w-14 h-14 object-contain"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-          />
-          <div className="text-right">
-            <h1 className="text-base font-extrabold">الجمهورية اليمنية - محافظة تعز</h1>
-            <h2 className="text-sm font-bold">مشروع مياه غيل الضياء قدس المواسط</h2>
-            <p className="text-[10px] text-gray-600 font-semibold">سند قبض رسمي</p>
+      <div className="flex justify-between items-center border-b-2 border-black pb-2 relative min-h-[100px]">
+        {/* Right Section: Entity Info */}
+        <div className="text-right flex-1 z-10">
+          <h1 className="text-base font-extrabold text-gray-900">الجمهورية اليمنية - محافظة تعز</h1>
+          <h2 className="text-sm font-bold text-gray-800">مشروع مياه غيل الضياء قدس المواسط</h2>
+          <p className="text-[10px] text-gray-600 font-bold mt-0.5">سند قبض رسمي</p>
+        </div>
+
+        {/* Center Section: Prominent Logo */}
+        <div className="flex-shrink-0 mx-4 z-20">
+          <div className="relative">
+            <div className="absolute inset-0 bg-emerald-500/5 blur-lg rounded-full -z-10"></div>
+            <img
+              src="/logo.png"
+              alt="شعار المشروع"
+              className="w-20 h-20 object-contain drop-shadow-[0_3px_8px_rgba(0,0,0,0.15)]"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+            />
           </div>
         </div>
-        <div className="text-center bg-gradient-to-b from-emerald-50 to-emerald-100 border-2 border-emerald-800 px-5 py-1.5 rounded-md shadow-sm">
-          <h2 className="text-sm font-extrabold text-emerald-900 tracking-wider">سند قبض</h2>
-        </div>
-        <div className="text-left text-[10px] space-y-0.5">
-          <p className="font-bold text-xs border-b border-black pb-0.5">رقم: {receipt.receiptNumber || receipt.id.slice(0, 8)}</p>
-          <p className="text-gray-600">{receipt.customer.address || "—"}</p>
+
+        {/* Left Section: Receipt Number and Type */}
+        <div className="text-left flex-1 flex flex-col items-end z-10">
+          <div className="border-2 border-black px-2 py-0.5 rounded bg-gray-50 mb-1">
+            <p className="font-black text-xs">رقم السند: {receipt.receiptNumber || receipt.id.slice(0, 8)}</p>
+          </div>
+          <div className="bg-emerald-100 border-2 border-emerald-800 px-3 py-0.5 rounded shadow-sm">
+            <h2 className="text-[11px] font-black text-emerald-900">سند قبض</h2>
+          </div>
+          <p className="text-[9px] text-gray-700 font-bold mt-1">{receipt.customer.address || "—"}</p>
         </div>
       </div>
 
