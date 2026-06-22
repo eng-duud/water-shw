@@ -1,19 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { isDemoMode } from "@/lib/demo-mode";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-
-  if (pathname === "/login") {
-    return <>{children}</>;
-  }
-
-  const handleLogout = async () => {
-    await fetch("/api/auth/login", { method: "DELETE" });
-    window.location.href = "/login";
-  };
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen">
@@ -58,16 +48,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </Link>
         </nav>
 
-        <div className="p-4 border-t border-slate-800">
-          <button
-            onClick={handleLogout}
-            className="flex items-center space-x-3 space-x-reverse w-full px-4 py-2.5 rounded-lg hover:bg-red-800/40 transition-colors text-slate-400 hover:text-red-300 text-sm"
-          >
-            <span>🚪</span>
-            <span className="font-medium">تسجيل خروج</span>
-          </button>
-        </div>
-
         <div className="px-4 pb-4 text-center text-xs text-slate-500 no-print">
           نظام الفوترة © 2026
         </div>
@@ -82,8 +62,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <span className="font-semibold text-slate-800">نظام إدارة وتحصيل فواتير المياه</span>
           </div>
           <div className="flex items-center space-x-2 space-x-reverse">
-            <span className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-xs font-semibold border border-emerald-200">
-              متصل بقاعدة البيانات
+            <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${
+              isDemoMode()
+                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+            }`}>
+              {isDemoMode() ? 'نظام تجريبي - للعرض فقط' : 'متصل بقاعدة البيانات'}
             </span>
           </div>
         </header>

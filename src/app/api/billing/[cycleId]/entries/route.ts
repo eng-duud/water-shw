@@ -3,6 +3,7 @@ import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { calculateBill } from '@/lib/billing';
 import { TENANT_ID } from '@/lib/constants';
+import { isDemoMode, demoResponse } from '@/lib/demo-mode';
 
 const batchEntriesSchema = z.object({
   entries: z.array(
@@ -30,6 +31,10 @@ export async function POST(
   context: ContextType
 ) {
   try {
+    if (isDemoMode()) {
+      return demoResponse({ success: true, count: 0 });
+    }
+
     const { cycleId } = await context.params;
     const body = await request.json();
     const parsed = batchEntriesSchema.safeParse(body);

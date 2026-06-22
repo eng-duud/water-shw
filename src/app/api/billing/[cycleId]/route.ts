@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { TENANT_ID } from '@/lib/constants';
+import { isDemoMode, demoResponse } from '@/lib/demo-mode';
 
 const updateCycleSchema = z.object({
   status: z.enum(['DRAFT', 'ISSUED', 'CLOSED']),
@@ -132,6 +133,10 @@ export async function PUT(
   context: ContextType
 ) {
   try {
+    if (isDemoMode()) {
+      return demoResponse({ updated: null });
+    }
+
     const { cycleId } = await context.params;
     const body = await request.json();
     const parsed = updateCycleSchema.safeParse(body);

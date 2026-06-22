@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { uploadToCloudinary } from "@/lib/cloudinary";
+import { demoAlert } from "@/lib/demo-toast";
 
 interface Customer {
   id: string;
@@ -122,6 +123,10 @@ export default function CustomersPage() {
       const resData = await res.json();
       if (!res.ok) {
         throw new Error(resData.error || "فشل حفظ بيانات المشترك");
+      }
+
+      if (resData.demo) {
+        demoAlert(customerId ? "تم تعديل بيانات المشترك بنجاح!" : "تم إضافة المشترك بنجاح!");
       }
 
       setShowModal(false);

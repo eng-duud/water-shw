@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { TENANT_ID } from '@/lib/constants';
+import { isDemoMode, demoResponse } from '@/lib/demo-mode';
 
 const updateCustomerSchema = z.object({
   name: z.string().min(1, 'اسم العميل مطلوب'),
@@ -62,6 +63,10 @@ export async function PUT(
   context: ContextType
 ) {
   try {
+    if (isDemoMode()) {
+      return demoResponse({ updated: null });
+    }
+
     const { id } = await context.params;
     const body = await request.json();
     const parsed = updateCustomerSchema.safeParse(body);

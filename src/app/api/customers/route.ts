@@ -3,6 +3,7 @@ import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { getOrCreateTenant } from '@/lib/tenant';
 import { TENANT_ID } from '@/lib/constants';
+import { isDemoMode, demoResponse } from '@/lib/demo-mode';
 
 const createCustomerSchema = z.object({
   accountNumber: z.string().min(1, 'رقم الحساب مطلوب'),
@@ -32,6 +33,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    if (isDemoMode()) {
+      return demoResponse({ customer: null });
+    }
+
     await getOrCreateTenant(TENANT_ID);
     const body = await request.json();
     const parsed = createCustomerSchema.safeParse(body);

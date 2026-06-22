@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { demoAlert } from "@/lib/demo-toast";
 
   interface DashboardData {
     stats: {
@@ -73,6 +74,9 @@ export default function Dashboard() {
       const resData = await res.json();
       if (!res.ok) {
         throw new Error(resData.error || "فشل إنشاء دورة الفوترة");
+      }
+      if (resData.demo) {
+        demoAlert("تم إنشاء دورة الفوترة بنجاح!");
       }
       setShowNewCycleModal(false);
       fetchDashboardData();

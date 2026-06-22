@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { demoAlert } from "@/lib/demo-toast";
 
 interface Customer {
   id: string;
@@ -173,7 +174,7 @@ export default function PaymentsPage() {
       const resData = await res.json();
       if (!res.ok) throw new Error(resData.error || "فشل تسجيل الدفعة");
 
-      alert("تم تسجيل الدفعة وتوزيعها على الفواتير المحددة بنجاح!");
+      demoAlert("تم تسجيل الدفعة وتوزيعها على الفواتير المحددة بنجاح!");
 
       setSelectedCustomerId("");
       setAmount("");
@@ -204,7 +205,7 @@ export default function PaymentsPage() {
       });
       if (!res.ok) throw new Error("فشل تسوية الرصيد الزائد");
 
-      alert("تم تسجيل تسوية الرصيد المعلق بنجاح!");
+      demoAlert("تم تسجيل تسوية الرصيد المعلق بنجاح!");
       setSelectedPaymentForSurplus(null);
       setSurplusNoteInput("");
       fetchData();

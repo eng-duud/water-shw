@@ -3,6 +3,7 @@ import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { TENANT_ID } from '@/lib/constants';
 import { getOrCreateTenant } from '@/lib/tenant';
+import { isDemoMode, demoResponse } from '@/lib/demo-mode';
 
 const createCycleSchema = z.object({
   year: z.number().int().min(2000).max(2100),
@@ -33,6 +34,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    if (isDemoMode()) {
+      return demoResponse({ cycle: null });
+    }
+
     await getOrCreateTenant(TENANT_ID);
     const body = await request.json();
     const parsed = createCycleSchema.safeParse(body);

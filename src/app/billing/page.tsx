@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import Link from "next/link";
+import { demoAlert } from "@/lib/demo-toast";
 
 interface BillingCycle {
   id: string;
@@ -351,7 +352,7 @@ export default function BillingPage() {
       const resData = await res.json();
       if (!res.ok) throw new Error(resData.error || "فشل حفظ الفاتورة");
 
-      alert("تم حفظ الفاتورة بنجاح!");
+      demoAlert("تم حفظ الفاتورة بنجاح!");
       fetchCycleBills(activeCycle);
     } catch (err: any) {
       alert(err.message || "حدث خطأ");
@@ -400,7 +401,7 @@ export default function BillingPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "فشل حفظ القراءات");
 
-      alert("تم حفظ جميع القراءات بنجاح!");
+      demoAlert("تم حفظ جميع القراءات بنجاح!");
       fetchCycleBills(activeCycle);
     } catch (err: any) {
       alert(err.message || "حدث خطأ");
@@ -427,9 +428,9 @@ export default function BillingPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "فشل إصدار دورة الفوترة");
 
-      alert("تم إصدار الدورة وقفلها بنجاح!");
+      demoAlert("تم إصدار الدورة وقفلها بنجاح!");
       fetchCycles();
-      fetchCycleBills(data);
+      if (activeCycle) fetchCycleBills(activeCycle);
     } catch (err: any) {
       alert(err.message || "حدث خطأ");
     } finally {

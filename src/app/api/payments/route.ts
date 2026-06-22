@@ -3,6 +3,7 @@ import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { allocatePaymentToSingleBill } from '@/lib/payment-distribution';
 import { TENANT_ID } from '@/lib/constants';
+import { isDemoMode, demoResponse } from '@/lib/demo-mode';
 
 const paymentSchema = z.object({
   billIds: z.array(z.string().min(1)).min(1, 'يجب اختيار فاتورة واحدة على الأقل'),
@@ -39,6 +40,19 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    if (isDemoMode()) {
+      return demoResponse({
+        paymentId: null,
+        receiptNumber: 'DEMO-RCP-00000000-001',
+        customerName: null,
+        billsCount: 0,
+        billNumbers: [],
+        amount: 0,
+        allocatedAmount: 0,
+        surplusAmount: 0,
+      });
+    }
+
     const body = await request.json();
     // Support both billIds (array) and billId (single, backward compatibility)
     if (body.billId && !body.billIds) {
