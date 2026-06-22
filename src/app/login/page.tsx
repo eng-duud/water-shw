@@ -49,8 +49,8 @@ export default function LoginPage() {
               onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
             />
           </div>
-          <h1 className="text-2xl font-bold text-white">مشروع مياه غيل الضياء</h1>
-          <p className="text-sky-200 text-sm mt-1">نظام إدارة الفوترة والتحصيل</p>
+          <h1 className="text-2xl font-bold text-white">نظام إدارة الفوترة والتحصيل</h1>
+          <p className="text-sky-200 text-sm mt-1">للاشتراك في الخدمة يرجى التواصل مع إدارة النظام</p>
         </div>
 
         {/* Login Form */}

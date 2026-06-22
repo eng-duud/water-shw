@@ -113,7 +113,7 @@ export default function Dashboard() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-brand-600 to-brand-700 p-6 md:p-8 rounded-2xl text-white shadow-lg">
         <div>
           <h2 className="text-2xl font-bold">لوحة التحكم والمؤشرات الرئيسية</h2>
-          <p className="text-brand-100 text-sm mt-1">مشروع مياه غيل الضياء - قدس المواسط</p>
+          <p className="text-brand-100 text-sm mt-1">نظام متكامل لقراءة العدادات والفوترة الإلكترونية وتحصيل فواتير المياه</p>
         </div>
         <div className="flex space-x-2 space-x-reverse">
           <button 

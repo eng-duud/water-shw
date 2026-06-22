@@ -3,8 +3,8 @@ import "./globals.css";
 import AppShell from "@/components/AppShell";
 
 export const metadata: Metadata = {
-  title: "غيل الضياء - نظام إدارة فواتير المياه",
-  description: "نظام تحصيل وإدارة فواتير المياه لمشروع غيل الضياء - قدس المواسط",
+  title: "نظام إدارة فواتير المياه - خدمة فوترة إلكترونية",
+  description: "نظام متكامل لإدارة قراءات العدادات والفوترة الإلكترونية وتحصيل فواتير المياه",
 };
 
 export default function RootLayout({

@@ -20,8 +20,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       {/* Navigation Sidebar */}
       <aside className="no-print w-full md:w-64 glass-panel text-white flex flex-col shrink-0">
         <div className="p-6 border-b border-slate-800">
-          <h1 className="text-xl font-bold tracking-wide text-brand-100">غيل الضياء</h1>
-          <p className="text-xs text-slate-400 mt-1">قدس المواسط لإدارة المياه</p>
+          <h1 className="text-xl font-bold tracking-wide text-brand-100">نظام إدارة الفوترة</h1>
+          <p className="text-xs text-slate-400 mt-1">خدمة قراءة العدادات والفوترة والتحصيل</p>
         </div>
 
         <nav className="flex-1 p-4 space-y-1">
@@ -79,7 +79,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <header className="no-print bg-white border-b border-slate-200 h-16 flex items-center justify-between px-6 shrink-0 shadow-sm">
           <div className="flex items-center space-x-3 space-x-reverse">
             <span className="text-xl">🚰</span>
-            <span className="font-semibold text-slate-800">مشروع مياه غيل الضياء</span>
+            <span className="font-semibold text-slate-800">نظام إدارة وتحصيل فواتير المياه</span>
           </div>
           <div className="flex items-center space-x-2 space-x-reverse">
             <span className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-xs font-semibold border border-emerald-200">

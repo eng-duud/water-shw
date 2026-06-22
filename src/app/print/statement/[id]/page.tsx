@@ -94,8 +94,8 @@ export default function StatementPrint() {
       <div className="flex items-center justify-between border-b-2 border-black pb-3 gap-4">
         {/* Right Section: Entity Info */}
         <div className="text-right flex-1">
-          <h1 className="text-base font-extrabold text-gray-900">الجمهورية اليمنية - محافظة تعز</h1>
-          <h2 className="text-sm font-bold text-gray-800">مشروع مياه غيل الضياء قدس المواسط</h2>
+          <h1 className="text-base font-extrabold text-gray-900">الجمهورية اليمنية - اسم المحافظة</h1>
+          <h2 className="text-sm font-bold text-gray-800">اسم مشروعك</h2>
           <p className="text-[10px] text-gray-600 font-bold mt-1">كشف حساب مشترك</p>
         </div>
 

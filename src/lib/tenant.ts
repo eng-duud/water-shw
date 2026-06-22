@@ -12,7 +12,7 @@ export async function getOrCreateTenant(tenantId: string = TENANT_ID) {
     tenant = await prisma.tenant.create({
       data: {
         id: tenantId,
-        name: "غيل الضياء - قضاء المواسط",
+        name: "اسم مشروعك",
         settings: {
           create: {
             workUnitPrice: DEFAULT_PRICING.workUnitPrice,

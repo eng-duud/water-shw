@@ -347,7 +347,7 @@ export default function CustomersPage() {
                     value={village}
                     onChange={(e) => setVillage(e.target.value)}
                     className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-                    placeholder="مثال: قدس المواسط"
+                    placeholder="مثال: اسم مشروعك"
                   />
                 </div>
               </div>
