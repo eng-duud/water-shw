@@ -127,15 +127,16 @@ export default function PaymentsPage() {
     fetchBills();
   }, [selectedCustomerId]);
 
-  // Auto-generate receipt number when form is ready
+  // Auto-generate receipt number when customer is selected
   useEffect(() => {
-    if (selectedCustomerId && unpaidBills.length > 0) {
+    if (selectedCustomerId) {
+      setReceiptNumber("جاري التوليد...");
       fetch("/api/payments/next-receipt-number")
         .then(res => res.json())
         .then(data => setReceiptNumber(data.receiptNumber))
         .catch(() => setReceiptNumber("—"));
     }
-  }, [selectedCustomerId, unpaidBills.length]);
+  }, [selectedCustomerId]);
 
   const totalUnpaidSelected = selectedBillIds.reduce((sum, id) => {
     const bill = unpaidBills.find(b => b.id === id);
